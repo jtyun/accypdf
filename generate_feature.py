@@ -119,4 +119,84 @@ print('Generated data')
 
 
 
-#%% Machine learning algorithms
+#%% Machine learning classifier algorithms
+
+import pandas as pd
+import numpy as np
+
+#from sklearn.model_selection import train_test_split
+
+data=pd.read_csv('C:/Users/40463/OneDrive/Documents/2019 Fall/PDF/pdf_data.csv',usecols=[1,2,3,4,5])
+
+X= data.iloc[:,0:4]
+y= data.Table
+
+# standardization
+
+# split training data and test data
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.25, random_state=0,shuffle=True)
+
+
+
+## Logistic regression
+from sklearn.linear_model import LogisticRegressionCV
+clf1 = LogisticRegressionCV()
+
+
+## SVM
+from sklearn import svm
+clf2 = svm.SVC()
+
+## Random forest
+from sklearn.ensemble import RandomForestClassifier
+clf3 = RandomForestClassifier()
+
+
+# Tune models
+from sklearn.model_selection import GridSearchCV
+params1 = {'Cs':[10,20,30,50,100]}
+params2 = {'kernel': ['rbf','linear','poly'], 'C':np.arange(1,5)}
+params3 ={'n_estimators': [100,200,300,400,500] , 'min_samples_split':np.arange(2,5)}
+
+grid1 = GridSearchCV(estimator=clf1, param_grid=params1,scoring='precision')
+grid2 = GridSearchCV(estimator=clf2, param_grid=params2,scoring='precision')
+grid3 = GridSearchCV(estimator=clf3, param_grid=params3,scoring='precision')
+grid1.fit(X,y)
+grid2.fit(X,y)
+grid3.fit(X,y)
+
+print(grid1.best_estimator_,grid1.best_score_)
+print(grid2.best_estimator_,grid2.best_score_)
+print(grid3.best_estimator_,grid3.best_score_)
+
+
+# K folds
+from sklearn.model_selection import KFold
+from sklearn.metrics import f1_score
+kf=KFold(n_splits=5, random_state=0, shuffle=True)
+
+accuracy_model = pd.DataFrame([])
+
+for train_index,test_index in kf.split(X):
+    # Split train-test
+    X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+    # Train the model
+    model1 = LogisticRegressionCV(Cs=10).fit(X_train, y_train)
+    model2 = svm.SVC(kernel='linear',C=4).fit(X_train, y_train)
+    model3 = RandomForestClassifier(n_estimators=400,min_samples_split=3).fit(X_train, y_train)
+    # append to the dataframe
+    accuracy_model=accuracy_model.append([f1_score(y_test, model1.predict(X_test)),f1_score(y_test, model2.predict(X_test)),f1_score(y_test, model3.predict(X_test))])
+
+
+
+result=accuracy_model.to_numpy()
+result=result.reshape(5,3)
+accuracy_model=pd.DataFrame(result,columns=['Logistic','SVM','Random Forest'])
+print(accuracy_model.mean(axis=0))
+
+#random forest is the best model
+
+
+
